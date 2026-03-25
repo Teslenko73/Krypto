@@ -25,11 +25,6 @@
         <Label text="Klucz szyfrujący:" />
         <TextField fx:id="keyField" promptText="Hasło / Klucz" />
     </VBox>
-    <VBox spacing="5" GridPane.columnIndex="0" GridPane.rowIndex="0">
-        <Label text="Tekst jawny:"/>
-        <TextArea fx:id="inputField" prefHeight="10" prefWidth="300"/>
-        <Button text="Otwórz plik tekstowy" onAction="#handleOpenFile"/>
-    </VBox>
     <HBox>
     <VBox spacing="5.0">
         <Label text="Tekst wejściowy:" />
