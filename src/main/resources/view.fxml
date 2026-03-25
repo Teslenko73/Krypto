@@ -31,8 +31,11 @@
         <TextArea fx:id="inputField" prefHeight="100.0" promptText="Wpisz tekst..." />
     </VBox>
     <VBox alignment="CENTER" spacing="20.0">
+        <Button text="WCZYTAJ PLIK" onAction="#handleOpenFile" prefWidth="120.0" style="-fx-background-color: #e1f5fe;"/>
         <Button onAction="#handleEncrypt" text="ZASZYFRUJ" prefWidth="120.0"/>
         <Button onAction="#handleDecrypt" text="ODSZYFRUJ" prefWidth="120.0"/>
+        <Button text="ZAPISZ WYNIK" onAction="#handleSaveFile" prefWidth="120.0" style="-fx-background-color: #e8f5e9;"/>
+
         <RadioButton text="Plik" fx:id="modeFile"/>
         <RadioButton text="okno" fx:id="modeWindow" selected="true"/>
     </VBox>
