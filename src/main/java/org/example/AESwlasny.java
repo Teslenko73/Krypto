@@ -146,13 +146,11 @@ public class AESwlasny {
         }
         int paddingLen = data[data.length - 1] & 0xFF;
 
-        // Wartość paddingu musi być w zakresie 1–16
         if (paddingLen < 1 || paddingLen > 16) {
             throw new IllegalStateException(
                     "Nieprawidłowy padding (wartość " + paddingLen + ") — błędny klucz lub uszkodzone dane.");
         }
 
-        // POPRAWKA: każdy bajt paddingu musi mieć tę samą wartość (wymaganie PKCS5)
         for (int i = data.length - paddingLen; i < data.length; i++) {
             if ((data[i] & 0xFF) != paddingLen) {
                 throw new IllegalStateException(
@@ -271,7 +269,7 @@ public class AESwlasny {
             s[0][c] ^= (word >>> 24) & 0xFF;
             s[1][c] ^= (word >>> 16) & 0xFF;
             s[2][c] ^= (word >>>  8) & 0xFF;
-            s[3][c] ^=  word         & 0xFF;
+            s[3][c] ^=  word & 0xFF;
         }
     }
 
@@ -332,7 +330,7 @@ public class AESwlasny {
         for (int i = 0; i < 8; i++) {
             if ((b & 1) != 0) p ^= a;
             boolean hiBitSet = (a & 0x80) != 0;
-            a = (a << 1) & 0xFF;   // POPRAWKA: maskowanie do 8 bitów już tu, nie dopiero na końcu
+            a = (a << 1) & 0xFF;
             if (hiBitSet) a ^= 0x1B;
             b >>= 1;
         }
