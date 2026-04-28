@@ -3,9 +3,7 @@ package org.example;
 import java.security.SecureRandom;
 import java.util.Arrays;
 
-/**
- * Autorska implementacja algorytmu AES-128 w trybie ECB z paddingiem PKCS5.
- */
+
 public class AESwlasny {
 
     private static final int[] sBox = {
@@ -50,25 +48,17 @@ public class AESwlasny {
             0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36
     };
 
-    // -----------------------------------------------------------------------
+    //
     // PUBLIC API
-    // -----------------------------------------------------------------------
+    //
 
-    /** Generuje losowy klucz 128-bitowy (16 bajtów) zakodowany nie — zwraca surowe bajty. */
+    /** Generuje losowy klucz 128-bitowy (16 bajtów) */
     public byte[] generowanieklucza() {
         byte[] key = new byte[16];
         new SecureRandom().nextBytes(key);
         return key;
     }
 
-    /**
-     * Szyfruje dane z użyciem paddingu PKCS5.
-     *
-     * @param data     dane wejściowe (dowolna długość)
-     * @param keyBytes klucz 16-bajtowy
-     * @return zaszyfrowane dane
-     * @throws IllegalArgumentException gdy klucz ma złą długość
-     */
     public byte[] encrypt(byte[] data, byte[] keyBytes) {
         validateKey(keyBytes);
         byte[] paddedData = addPadding(data);
@@ -76,13 +66,10 @@ public class AESwlasny {
     }
 
     /**
-     * Odszyfrowuje dane i usuwa padding PKCS5.
-     *
-     * @param encryptedData zaszyfrowane dane (długość musi być wielokrotnością 16)
-     * @param keyBytes      klucz 16-bajtowy
-     * @return odszyfrowane dane bez paddingu
-     * @throws IllegalArgumentException gdy klucz lub dane mają złą długość
-     * @throws IllegalStateException    gdy padding jest nieprawidłowy (zły klucz lub uszkodzone dane)
+     * Odszyfrowuje dane i usuwa padding
+     * zaszyfrowane dane (długość musi być wielokrotnością 16)
+     * klucz 16-bajtowy
+     * dszyfrowane dane bez paddingu
      */
     public byte[] decrypt(byte[] encryptedData, byte[] keyBytes) {
         validateKey(keyBytes);
@@ -94,21 +81,21 @@ public class AESwlasny {
         return removePadding(decryptedPadded);
     }
 
-    // -----------------------------------------------------------------------
+
     // WALIDACJA
-    // -----------------------------------------------------------------------
+
 
     private void validateKey(byte[] keyBytes) {
-        if (keyBytes == null || keyBytes.length != 16) {
+        if (keyBytes == null || (keyBytes.length != 16 && keyBytes.length != 24 && keyBytes.length != 32)) {
             throw new IllegalArgumentException(
-                    "Klucz AES-128 musi mieć dokładnie 16 bajtów (128 bitów). " +
+                    "Klucz AES musi mieć dokładnie  16/24/32 bity" +
                             "Otrzymano: " + (keyBytes == null ? "null" : keyBytes.length + " bajtów"));
         }
     }
 
-    // -----------------------------------------------------------------------
-    // ECB
-    // -----------------------------------------------------------------------
+
+    // ECB electriccodebook
+
 
     private byte[] processECB(byte[] data, byte[] keyBytes, boolean encrypt) {
         int[] expandedKey = expandKey(keyBytes);
@@ -123,9 +110,6 @@ public class AESwlasny {
         return result;
     }
 
-    // -----------------------------------------------------------------------
-    // PADDING PKCS5 (identyczny z PKCS7 dla bloków 16-bajtowych)
-    // -----------------------------------------------------------------------
 
     private byte[] addPadding(byte[] data) {
         // paddingLen wynosi zawsze 1–16, więc nawet dane będące wielokrotnością 16
@@ -136,10 +120,7 @@ public class AESwlasny {
         return padded;
     }
 
-    /**
-     * Usuwa i weryfikuje padding PKCS5.
-     * Rzuca wyjątek gdy padding jest nieprawidłowy (np. użyto złego klucza).
-     */
+    //usuwa padding jesli jest zle to throw
     private byte[] removePadding(byte[] data) {
         if (data.length == 0) {
             throw new IllegalStateException("Odszyfrowane dane są puste — prawdopodobnie błędny klucz.");
@@ -152,38 +133,42 @@ public class AESwlasny {
                     "Nieprawidłowy padding (wartość " + paddingLen + ") — błędny klucz lub uszkodzone dane.");
         }
 
-        // POPRAWKA: każdy bajt paddingu musi mieć tę samą wartość (wymaganie PKCS5)
+        //każdy bajt paddingu musi mieć tę samą wartość
         for (int i = data.length - paddingLen; i < data.length; i++) {
             if ((data[i] & 0xFF) != paddingLen) {
                 throw new IllegalStateException(
-                        "Nieprawidłowy padding PKCS5 — błędny klucz lub uszkodzone dane.");
+                        "Nieprawidłowy padding  — błędny klucz lub uszkodzone dane.");
             }
         }
 
         return Arrays.copyOfRange(data, 0, data.length - paddingLen);
     }
 
-    // -----------------------------------------------------------------------
+
     // KEY EXPANSION
-    // -----------------------------------------------------------------------
+
 
     private int[] expandKey(byte[] key) {
-        final int nk = 4;   // liczba słów w kluczu (128 bit → 4)
-        final int nr = 10;  // liczba rund AES-128
+        int keyLen = key.length;
+        int nk = keyLen / 4;           // 4, 6 lub 8
+        int nr = nk + 6;               // 10, 12 lub 14
         int[] w = new int[4 * (nr + 1)];
 
+        // Kopiowanie klucza początkowego
         for (int i = 0; i < nk; i++) {
-            w[i] = ((key[4 * i]     & 0xFF) << 24)
-                    | ((key[4 * i + 1] & 0xFF) << 16)
-                    | ((key[4 * i + 2] & 0xFF) <<  8)
-                    |  (key[4 * i + 3] & 0xFF);
+            w[i] = ((key[4 * i] & 0xFF) << 24) | ((key[4 * i + 1] & 0xFF) << 16) |
+                    ((key[4 * i + 2] & 0xFF) << 8) | (key[4 * i + 3] & 0xFF);
         }
 
+        // Generowanie pozostałych słów
         for (int i = nk; i < w.length; i++) {
             int temp = w[i - 1];
             if (i % nk == 0) {
-                // rCon indeksowany od 1 do nr — celowe, zgodne ze specyfikacją AES
                 temp = subWord(rotWord(temp)) ^ (rCon[i / nk] << 24);
+            }
+            // DODATKOWY WARUNEK TYLKO DLA AES-256
+            else if (nk > 6 && i % nk == 4) {
+                temp = subWord(temp);
             }
             w[i] = w[i - nk] ^ temp;
         }
@@ -201,43 +186,49 @@ public class AESwlasny {
                 |  sBox[ word         & 0xFF];
     }
 
-    // -----------------------------------------------------------------------
     // SZYFROWANIE / DESZYFROWANIE BLOKU
-    // -----------------------------------------------------------------------
 
     private byte[] encryptBlock(byte[] block, int[] w) {
+        int nr = (w.length / 4) - 1; // Obliczamy liczbę rund z długości rozszerzonego klucza
         int[][] state = bytesToState(block);
         addRoundKey(state, w, 0);
 
-        for (int round = 1; round < 10; round++) {
+        for (int round = 1; round < nr; round++) {
             subBytes(state);
             shiftRows(state);
             mixColumns(state);
             addRoundKey(state, w, round);
         }
 
-        // Ostatnia runda — bez MixColumns
         subBytes(state);
         shiftRows(state);
-        addRoundKey(state, w, 10);
+        addRoundKey(state, w, nr); // Ostatnia runda
         return stateToBytes(state);
     }
 
     private byte[] decryptBlock(byte[] block, int[] w) {
-        int[][] state = bytesToState(block);
-        addRoundKey(state, w, 10);
+        // Obliczamy liczbę rund (Nr) na podstawie rozmiaru tablicy w.
+        // Skoro w ma rozmiar 4 * (Nr + 1), to Nr = (w.length / 4) - 1.
+        int nr = (w.length / 4) - 1;
 
-        for (int round = 9; round >= 1; round--) {
+        int[][] state = bytesToState(block);
+
+        // Runda początkowa (używa ostatniego klucza rundowego)
+        addRoundKey(state, w, nr);
+
+        // Rundy główne (od Nr-1 w dół do 1)
+        for (int round = nr - 1; round >= 1; round--) {
             invShiftRows(state);
             invSubBytes(state);
             addRoundKey(state, w, round);
             invMixColumns(state);
         }
 
-        // Pierwsza runda odwrotna — bez InvMixColumns
+        // Ostatnia runda odwrotna (logicznie pierwsza runda szyfrowania) — bez InvMixColumns
         invShiftRows(state);
         invSubBytes(state);
         addRoundKey(state, w, 0);
+
         return stateToBytes(state);
     }
 
@@ -306,10 +297,10 @@ public class AESwlasny {
     private void mixColumns(int[][] s) {
         for (int c = 0; c < 4; c++) {
             int a0 = s[0][c], a1 = s[1][c], a2 = s[2][c], a3 = s[3][c];
-            s[0][c] = gfMul(2, a0) ^ gfMul(3, a1) ^ a2          ^ a3;
-            s[1][c] = a0           ^ gfMul(2, a1) ^ gfMul(3, a2) ^ a3;
-            s[2][c] = a0           ^ a1           ^ gfMul(2, a2) ^ gfMul(3, a3);
-            s[3][c] = gfMul(3, a0) ^ a1           ^ a2           ^ gfMul(2, a3);
+            s[0][c] = gfMul(2, a0) ^ gfMul(3, a1) ^ a2  ^ a3;
+            s[1][c] = a0 ^ gfMul(2, a1) ^ gfMul(3, a2) ^ a3;
+            s[2][c] = a0 ^ a1  ^ gfMul(2, a2) ^ gfMul(3, a3);
+            s[3][c] = gfMul(3, a0) ^ a1  ^ a2    ^ gfMul(2, a3);
         }
     }
 
@@ -332,7 +323,7 @@ public class AESwlasny {
         for (int i = 0; i < 8; i++) {
             if ((b & 1) != 0) p ^= a;
             boolean hiBitSet = (a & 0x80) != 0;
-            a = (a << 1) & 0xFF;   // POPRAWKA: maskowanie do 8 bitów już tu, nie dopiero na końcu
+            a = (a << 1) & 0xFF;   // maskowanie do 8 bitów już tu, nie dopiero na końcu
             if (hiBitSet) a ^= 0x1B;
             b >>= 1;
         }

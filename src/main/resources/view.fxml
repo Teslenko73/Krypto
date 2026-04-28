@@ -15,8 +15,23 @@
     <padding>
         <Insets bottom="40.0" left="40.0" right="40.0" top="40.0" />
     </padding>
-
-    <Label text="Aplikacja Kryptograficzna" style="-fx-font-size: 20px; -fx-font-weight: bold;" />
+    <MenuButton text="128/192/256-bit">
+        <items>
+            <CustomMenuItem hideOnClick="false">
+                <content>
+                    <VBox spacing="10">
+                        <fx:define>
+                            <ToggleGroup fx:id="keySizeGroup"/>
+                        </fx:define>
+                        <RadioButton fx:id="rb128" text="128-bit" toggleGroup="$keySizeGroup" selected="true"/>
+                        <RadioButton fx:id="rb192" text="192-bit" toggleGroup="$keySizeGroup"/>
+                        <RadioButton fx:id="rb256" text="256-bit" toggleGroup="$keySizeGroup"/>
+                    </VBox>
+                </content>
+            </CustomMenuItem>
+        </items>
+    </MenuButton>
+    <Label text="aes" style="-fx-font-size: 20px; -fx-font-weight: bold;" />
     <VBox spacing="10.0">
 
         <Button  text="generuj kluc" onAction="#handleGenKey"/>

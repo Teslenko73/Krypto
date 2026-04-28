@@ -1,12 +1,15 @@
 package org.example;
 
 import javafx.fxml.FXML;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleGroup;
 import javafx.stage.FileChooser;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.security.SecureRandom;
 import java.util.Base64;
 
 public class CryptoController {
@@ -21,14 +24,29 @@ public class CryptoController {
     // -----------------------------------------------------------------------
     // GENEROWANIE KLUCZA
     // -----------------------------------------------------------------------
+    @FXML
+    private ToggleGroup keySizeGroup;
 
     @FXML
-    private void handleGenKey() {
-        byte[] key = aes.generowanieklucza();
-        keyField.setText(Base64.getEncoder().encodeToString(key));
-        outputField.setText("Wygenerowano nowy klucz 128-bitowy.");
+    private RadioButton rb128, rb192, rb256;
+
+    // Metoda wywoływana po kliknięciu "Generuj Klucz" lub "Szyfruj"
+    private int getSelectedKeySize() {
+        if (rb256.isSelected()) return 32; // 256 bitów = 32 bajty
+        if (rb192.isSelected()) return 24; // 192 bity = 24 bajty
+        return 16;                         // Domyślnie 128 bitów = 16 bajtów
     }
 
+    public void handleGenKey() {
+        int size = getSelectedKeySize();
+        byte[] key = new byte[size];
+        new SecureRandom().nextBytes(key);
+
+        // ZMIANA: Wyświetlamy wygenerowany klucz w polu tekstowym
+        String base64Key = Base64.getEncoder().encodeToString(key);
+        keyField.setText(base64Key);
+        outputField.setText("Wygenerowano klucz " + (size * 8) + "-bitowy.");
+    }
     // -----------------------------------------------------------------------
     // WYBÓR PLIKU
     // -----------------------------------------------------------------------
@@ -186,9 +204,10 @@ public class CryptoController {
         }
         try {
             byte[] keyBytes = Base64.getDecoder().decode(keyStr);
-            if (keyBytes.length != 16) {
-                outputField.setText("Błąd: klucz musi mieć 16 bajtów (128 bitów). "
-                        + "Obecna długość po dekodowaniu Base64: " + keyBytes.length + " bajtów.");
+            // ZMIANA: Akceptujemy 16, 24 lub 32 bajty
+            if (keyBytes.length != 16 && keyBytes.length != 24 && keyBytes.length != 32) {
+                outputField.setText("Błąd: klucz musi mieć 16, 24 lub 32 bajty. "
+                        + "Obecna długość: " + keyBytes.length + " bajtów.");
                 return null;
             }
             return keyBytes;
