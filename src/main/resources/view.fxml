@@ -1,49 +1,241 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.TextArea?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.VBox?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.control.RadioButton?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.geometry.Insets?>
-<VBox alignment="CENTER" spacing="15.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.CryptoController">
+
+<VBox spacing="8"
+      xmlns="http://javafx.com/javafx/25"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="org.example.CryptoController">
     <padding>
-        <Insets bottom="40.0" left="40.0" right="40.0" top="40.0" />
+        <Insets top="10" right="12" bottom="10" left="12"/>
     </padding>
 
-    <Label text="Aplikacja Kryptograficzna" style="-fx-font-size: 20px; -fx-font-weight: bold;" />
-    <VBox spacing="10.0">
+    <!-- ═══ SEKCJA: KLUCZ ═══ -->
+    <TitledPane text="Klucz" collapsible="false" expanded="true">
+        <VBox spacing="6">
+            <padding><Insets top="6" right="8" bottom="6" left="8"/></padding>
 
-        <Button  text="generuj kluc" onAction="#handleGenKey"/>
-    </VBox>
-    <VBox spacing="5.0">
-        <Label text="Klucz szyfrujący:" />
-        <TextField fx:id="keyField" promptText="Hasło / Klucz" />
-    </VBox>
-    <HBox>
-    <VBox spacing="5.0">
-        <Label text="Tekst wejściowy:" />
-        <TextArea fx:id="inputField" prefHeight="100.0" promptText="Wpisz tekst..." />
-    </VBox>
-    <VBox alignment="CENTER" spacing="20.0">
-        <Button text="WCZYTAJ PLIK" onAction="#handleOpenFile" prefWidth="120.0" style="-fx-background-color: #e1f5fe;"/>
-        <Button onAction="#handleEncrypt" text="ZASZYFRUJ" prefWidth="120.0"/>
-        <Button onAction="#handleDecrypt" text="ODSZYFRUJ" prefWidth="120.0"/>
-        <Button text="ZAPISZ WYNIK" onAction="#handleSaveFile" prefWidth="120.0" style="-fx-background-color: #e8f5e9;"/>
+            <!-- Klucz publiczny -->
+            <HBox spacing="8" alignment="CENTER_LEFT">
+                <Label text="Klucz Publiczny g^x mod p:" minWidth="180"/>
+                <TextField fx:id="publicKeyArea" editable="false"
+                           HBox.hgrow="ALWAYS"
+                           style="-fx-font-family: monospace; -fx-font-size: 11px;"/>
+            </HBox>
 
-        <RadioButton text="Plik" fx:id="modeFile"/>
-        <RadioButton text="okno" fx:id="modeWindow" selected="true"/>
-    </VBox>
+            <!-- Klucz prywatny -->
+            <HBox spacing="8" alignment="CENTER_LEFT">
+                <Label text="Klucz Prywatny x:" minWidth="180"/>
+                <TextField fx:id="privateKeyArea" editable="false"
+                           HBox.hgrow="ALWAYS"
+                           style="-fx-font-family: monospace; -fx-font-size: 11px;"/>
+            </HBox>
 
-    <VBox spacing="5.0">
-        <Label text="Wynik operacji:" />
-        <TextArea fx:id="outputField" editable="false" prefHeight="100.0"
-                  style="-fx-control-inner-background: #eeeeee;" />
-    </VBox>
-    </HBox>
+            <!-- MOD N -->
+            <HBox spacing="8" alignment="CENTER_LEFT">
+                <Label text="MOD N (q):" minWidth="180"/>
+                <TextField fx:id="modNField" editable="false"
+                           HBox.hgrow="ALWAYS"
+                           style="-fx-font-family: monospace; -fx-font-size: 11px;"/>
+            </HBox>
+
+            <!-- Generuj klucze -->
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="Wygeneruj wartości kluczy" minWidth="180"/>
+                <fx:define>
+                    <ToggleGroup fx:id="keySizeGroup"/>
+                </fx:define>
+                <RadioButton fx:id="rb1024" text="1024/160"
+                             toggleGroup="$keySizeGroup" selected="true"/>
+                <RadioButton fx:id="rb2048" text="2048/256"
+                             toggleGroup="$keySizeGroup"/>
+                <Button text="Generuj klucze" onAction="#handleGenerateKeys" prefWidth="130"/>
+                <ProgressIndicator fx:id="spinner" prefWidth="20" prefHeight="20" visible="false"/>
+            </HBox>
+
+            <!-- Wczytaj / Zapisz klucze -->
+            <HBox spacing="8" alignment="CENTER_LEFT">
+                <Label text="Wczytaj klucze z pliku" minWidth="180"/>
+                <TextField fx:id="loadKeyFileField" promptText="Nazwa pliku kluczy"
+                           prefWidth="160" style="-fx-font-size: 11px;"/>
+                <Button text="Wczytaj" onAction="#handleLoadKeys" prefWidth="80"/>
+                <Label text="Zapisz klucze do pliku" style="-fx-padding: 0 0 0 30;"/>
+                <TextField fx:id="saveKeyFileField" promptText="Nazwa pliku kluczy"
+                           prefWidth="160" style="-fx-font-size: 11px;"/>
+                <Button text="Zapisz" onAction="#handleSaveKeys" prefWidth="80"/>
+            </HBox>
+
+        </VBox>
+    </TitledPane>
+
+    <!-- ═══ SEKCJA: PODPIS / WERYFIKACJA ═══ -->
+    <TitledPane text="Podpis/Weryfikacja" collapsible="false" expanded="true"
+                VBox.vgrow="ALWAYS">
+        <VBox spacing="6" VBox.vgrow="ALWAYS">
+            <padding><Insets top="6" right="8" bottom="6" left="8"/></padding>
+
+            <!-- Nagłówki otwórz plik -->
+            <HBox spacing="8">
+                <VBox HBox.hgrow="ALWAYS">
+                    <HBox spacing="8" alignment="CENTER_LEFT">
+                        <Label text="Otwórz plik zawierający tekst jawny"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                    </HBox>
+                    <HBox spacing="6">
+                        <TextField fx:id="openPlainFileField" promptText="Ścieżka do pliku"
+                                   HBox.hgrow="ALWAYS" style="-fx-font-size: 11px;"/>
+                        <Button text="Otwórz" onAction="#handleOpenFile" prefWidth="70"/>
+                    </HBox>
+                </VBox>
+
+                <VBox minWidth="130" maxWidth="130"/>
+
+                <VBox HBox.hgrow="ALWAYS">
+                    <Label text="Otwórz plik zawierający podpis"/>
+                    <HBox spacing="6">
+                        <TextField fx:id="openSigFileField" promptText="Nazwa pliku z podpisem"
+                                   HBox.hgrow="ALWAYS" style="-fx-font-size: 11px;"/>
+                        <Button text="Otwórz" onAction="#handleLoadSignature" prefWidth="70"/>
+                    </HBox>
+                </VBox>
+            </HBox>
+
+            <!-- Główny obszar: tekst jawny | przyciski | podpis -->
+            <HBox spacing="10" VBox.vgrow="ALWAYS">
+
+                <!-- Lewa: tekst jawny -->
+                <TextArea fx:id="messageArea"
+                          promptText="Tekst jawny..."
+                          wrapText="true"
+                          HBox.hgrow="ALWAYS"
+                          prefHeight="220"
+                          style="-fx-font-family: monospace; -fx-font-size: 11px;"/>
+
+                <!-- Środek: przyciski + radio -->
+                <VBox spacing="14" alignment="CENTER" minWidth="130" maxWidth="130">
+                    <Button text="Podpisuj ->" onAction="#handleSign"
+                            prefWidth="120" prefHeight="32"/>
+                    <Button text="&lt;- Weryfikuj" onAction="#handleVerify"
+                            prefWidth="120" prefHeight="32"/>
+                    <Separator/>
+                    <fx:define>
+                        <ToggleGroup fx:id="modeGroup"/>
+                    </fx:define>
+                    <RadioButton fx:id="modePlik" text="Plik"
+                                 toggleGroup="$modeGroup" selected="true"/>
+                    <RadioButton fx:id="modeOkno" text="Okno"
+                                 toggleGroup="$modeGroup"/>
+                </VBox>
+
+                <!-- Prawa: podpis -->
+                <TextArea fx:id="signatureArea"
+                          promptText="Podpis (r:s hex)..."
+                          wrapText="true"
+                          HBox.hgrow="ALWAYS"
+                          prefHeight="220"
+                          style="-fx-font-family: monospace; -fx-font-size: 11px;"/>
+
+            </HBox>
+
+            <!-- Dolny pasek: zapisz tekst | zapisz podpis -->
+            <HBox spacing="8">
+                <VBox HBox.hgrow="ALWAYS">
+                    <Label text="Zapisz plik zawierający tekst jawny"/>
+                    <HBox spacing="6">
+                        <TextField fx:id="savePlainFileField"
+                                   promptText="Nazwa pliku z tekstem jawnym"
+                                   HBox.hgrow="ALWAYS" style="-fx-font-size: 11px;"/>
+                        <Button text="Zapisz" onAction="#handleSavePlain" prefWidth="70"/>
+                    </HBox>
+                </VBox>
+
+                <VBox minWidth="130" maxWidth="130"/>
+
+                <VBox HBox.hgrow="ALWAYS">
+                    <Label text="Zapisz plik zawierający podpis"/>
+                    <HBox spacing="6">
+                        <TextField fx:id="saveSigFileField"
+                                   promptText="Nazwa pliku z podpisem"
+                                   HBox.hgrow="ALWAYS" style="-fx-font-size: 11px;"/>
+                        <Button text="Zapisz" onAction="#handleSaveSignature" prefWidth="70"/>
+                    </HBox>
+                </VBox>
+            </HBox>
+
+        </VBox>
+    </TitledPane>
+
+    <!-- ═══ STATUS ═══ -->
+    <Label fx:id="statusLabel" text="Gotowy."
+           wrapText="true"
+           style="-fx-font-size: 11px; -fx-text-fill: #333;"/>
+
 </VBox>
+<!--<?xml version="1.0" encoding="UTF-8"?>-->
+
+<!--<?import javafx.geometry.Insets?>-->
+<!--<?import javafx.scene.control.Button?>-->
+<!--<?import javafx.scene.control.Label?>-->
+<!--<?import javafx.scene.control.TextArea?>-->
+<!--<?import javafx.scene.control.TextField?>-->
+<!--<?import javafx.scene.layout.VBox?>-->
+<!--<?import javafx.scene.layout.HBox?>-->
+<!--<?import javafx.scene.control.RadioButton?>-->
+<!--<?import javafx.scene.control.*?>-->
+<!--<?import javafx.scene.layout.*?>-->
+<!--<?import javafx.geometry.Insets?>-->
+<!--<VBox alignment="CENTER" spacing="15.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.CryptoController">-->
+<!--    <padding>-->
+<!--        <Insets bottom="40.0" left="40.0" right="40.0" top="40.0" />-->
+<!--    </padding>-->
+<!--    <MenuButton text="128/192/256-bit">-->
+<!--        <items>-->
+<!--            <CustomMenuItem hideOnClick="false">-->
+<!--                <content>-->
+<!--                    <VBox spacing="10">-->
+<!--                        <fx:define>-->
+<!--                            <ToggleGroup fx:id="keySizeGroup"/>-->
+<!--                        </fx:define>-->
+<!--                        <RadioButton fx:id="rb128" text="128-bit" toggleGroup="$keySizeGroup" selected="true"/>-->
+<!--                        <RadioButton fx:id="rb192" text="192-bit" toggleGroup="$keySizeGroup"/>-->
+<!--                        <RadioButton fx:id="rb256" text="256-bit" toggleGroup="$keySizeGroup"/>-->
+<!--                    </VBox>-->
+<!--                </content>-->
+<!--            </CustomMenuItem>-->
+<!--        </items>-->
+<!--    </MenuButton>-->
+<!--    <Label text="aes" style="-fx-font-size: 20px; -fx-font-weight: bold;" />-->
+<!--    <VBox spacing="10.0">-->
+
+<!--        <Button  text="generuj kluc" onAction="#handleGenKey"/>-->
+<!--    </VBox>-->
+<!--    <VBox spacing="5.0">-->
+<!--        <Label text="Klucz szyfrujący:" />-->
+<!--        <TextField fx:id="keyField" promptText="Hasło / Klucz" />-->
+<!--    </VBox>-->
+<!--    <HBox>-->
+<!--        <VBox spacing="5.0">-->
+<!--            <Label text="Tekst wejściowy:"/>-->
+<!--            <TextArea fx:id="inputField" prefHeight="100.0" promptText="Wpisz tekst..."/>-->
+<!--        </VBox>-->
+<!--        <VBox alignment="CENTER" spacing="20.0">-->
+<!--            <Button text="WCZYTAJ PLIK" onAction="#handleOpenFile" prefWidth="120.0"-->
+<!--                    style="-fx-background-color: #e1f5fe;"/>-->
+<!--            <Button onAction="#handleEncrypt" text="ZASZYFRUJ" prefWidth="120.0"/>-->
+<!--            <Button onAction="#handleDecrypt" text="ODSZYFRUJ" prefWidth="120.0"/>-->
+<!--            <Button text="ZAPISZ WYNIK" onAction="#handleSaveFile" prefWidth="120.0"-->
+<!--                    style="-fx-background-color: #e8f5e9;"/>-->
+
+<!--            <RadioButton text="Plik" fx:id="modeFile"/>-->
+<!--            <RadioButton text="okno" fx:id="modeWindow" selected="true"/>-->
+<!--        </VBox>-->
+
+<!--        <VBox spacing="5.0">-->
+<!--            <Label text="Wynik operacji:"/>-->
+<!--            <TextArea fx:id="outputField" editable="false" prefHeight="100.0"-->
+<!--                      style="-fx-control-inner-background: #eeeeee;"/>-->
+<!--        </VBox>-->
+<!--    </HBox>-->
+<!--</VBox>-->

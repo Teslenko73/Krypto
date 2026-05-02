@@ -110,7 +110,7 @@ public class AESwlasny {
     // ECB
     // -----------------------------------------------------------------------
 
-    private byte[] processECB(byte[] data, byte[] keyBytes, boolean encrypt) {
+    private byte[] processECB(byte[] data, byte[] keyBytes, boolean encrypt) {//1
         int[] expandedKey = expandKey(keyBytes);
         byte[] result = new byte[data.length];
         for (int i = 0; i < data.length; i += 16) {
@@ -146,11 +146,13 @@ public class AESwlasny {
         }
         int paddingLen = data[data.length - 1] & 0xFF;
 
+        // Wartość paddingu musi być w zakresie 1–16
         if (paddingLen < 1 || paddingLen > 16) {
             throw new IllegalStateException(
                     "Nieprawidłowy padding (wartość " + paddingLen + ") — błędny klucz lub uszkodzone dane.");
         }
 
+        // POPRAWKA: każdy bajt paddingu musi mieć tę samą wartość (wymaganie PKCS5)
         for (int i = data.length - paddingLen; i < data.length; i++) {
             if ((data[i] & 0xFF) != paddingLen) {
                 throw new IllegalStateException(
@@ -165,7 +167,7 @@ public class AESwlasny {
     // KEY EXPANSION
     // -----------------------------------------------------------------------
 
-    private int[] expandKey(byte[] key) {
+    private int[] expandKey(byte[] key) {//1
         final int nk = 4;   // liczba słów w kluczu (128 bit → 4)
         final int nr = 10;  // liczba rund AES-128
         int[] w = new int[4 * (nr + 1)];
@@ -263,13 +265,13 @@ public class AESwlasny {
     // TRANSFORMACJE AES
     // -----------------------------------------------------------------------
 
-    private void addRoundKey(int[][] s, int[] w, int round) {
+    private void addRoundKey(int[][] s, int[] w, int round) {//1
         for (int c = 0; c < 4; c++) {
             int word = w[round * 4 + c];
             s[0][c] ^= (word >>> 24) & 0xFF;
             s[1][c] ^= (word >>> 16) & 0xFF;
             s[2][c] ^= (word >>>  8) & 0xFF;
-            s[3][c] ^=  word & 0xFF;
+            s[3][c] ^=  word         & 0xFF;
         }
     }
 
@@ -279,7 +281,7 @@ public class AESwlasny {
                 s[r][c] = sBox[s[r][c]];
     }
 
-    private void invSubBytes(int[][] s) {
+    private void invSubBytes(int[][] s) {//0
         for (int r = 0; r < 4; r++)
             for (int c = 0; c < 4; c++)
                 s[r][c] = rsBox[s[r][c]];
@@ -330,7 +332,7 @@ public class AESwlasny {
         for (int i = 0; i < 8; i++) {
             if ((b & 1) != 0) p ^= a;
             boolean hiBitSet = (a & 0x80) != 0;
-            a = (a << 1) & 0xFF;
+            a = (a << 1) & 0xFF;   // POPRAWKA: maskowanie do 8 bitów już tu, nie dopiero na końcu
             if (hiBitSet) a ^= 0x1B;
             b >>= 1;
         }
